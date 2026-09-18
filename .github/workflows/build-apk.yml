@@ -22,13 +22,26 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.7'
+          gradle-version: '8.9'
+
+      - name: Extract Android Project
+        run: |
+          mkdir android-project
+          unzip -q *.zip -d android-project
+
+      - name: Find Android Project
+        run: |
+          PROJECT_DIR=$(find android-project -name settings.gradle.kts -printf '%h\n' | head -1)
+          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
+          echo "Project found at: $PROJECT_DIR"
 
       - name: Build APK
-        run: gradle assembleDebug
+        run: |
+          cd "$PROJECT_DIR"
+          gradle assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: ON-RIDE-APK
-          path: app/build/outputs/apk/debug/*.apk
+          path: android-project/**/app/build/outputs/apk/debug/*.apk
