@@ -1,0 +1,21 @@
+name: Generate Keystore
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate Keystore File
+        run: |
+          keytool -genkey -v -keystore onride.jks -keyalg RSA -keysize 2048 -validity 10000 -alias onride -dname "CN=ON RIDE, OU=App, O=Gudiyatham, L=Gudiyatham, S=Tamil Nadu, C=IN" -storepass onride123 -keypass onride123
+      
+      - name: Upload Keystore
+        uses: actions/upload-artifact@v4
+        with:
+          name: ON-RIDE-KEYSTORE
+          path: onride.jks
+
