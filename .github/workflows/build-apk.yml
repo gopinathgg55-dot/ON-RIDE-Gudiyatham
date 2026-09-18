@@ -20,28 +20,16 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.9'
+        uses: gradle/actions/setup-gradle@v3
 
-      - name: Extract Android Project
-        run: |
-          mkdir android-project
-          unzip -q *.zip -d android-project
-
-      - name: Find Android Project
-        run: |
-          PROJECT_DIR=$(find android-project -name settings.gradle.kts -printf '%h\n' | head -1)
-          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
-          echo "Project found at: $PROJECT_DIR"
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
 
       - name: Build APK
-        run: |
-          cd "$PROJECT_DIR"
-          gradle assembleDebug
+        run: ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: ON-RIDE-APK
-          path: android-project/**/app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/debug/*.apk
