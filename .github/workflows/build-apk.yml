@@ -23,10 +23,11 @@ jobs:
       run: sudo apt-get update && sudo apt-get install -y gradle
 
     - name: Build Debug APK with Gradle
-      run: gradle :onride-iks:assembleDebug
+      working-directory: onride-iks
+      run: gradle assembleDebug
 
     - name: Upload Generated APK
       uses: actions/upload-artifact@v4
       with:
         name: app-debug
-        path: onride-iks/build/outputs/apk/debug/onride-iks-debug.apk
+        path: onride-iks/build/outputs/apk/debug/*.apk
