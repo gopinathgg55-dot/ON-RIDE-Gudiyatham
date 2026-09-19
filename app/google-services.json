@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1097548408131",
+    "project_id": "on-ride-12769",
+    "storage_bucket": "on-ride-12769.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1097548408131:android:1b4baf0ee3035603907bf6",
+        "android_client_info": {
+          "package_name": "com.gudiyatham.onride"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBj5xZ8zYq_nNhNS6fEHbhA30z0LO6zlrg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
