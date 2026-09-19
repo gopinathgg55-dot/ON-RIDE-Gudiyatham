@@ -29,46 +29,58 @@ class MainActivity : ComponentActivity() {
                 modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colorScheme.background
             ) {
-                LoginScreen()
+                MainAppNav()
             }
         }
     }
 }
 
 @Composable
-fun LoginScreen() {
+fun MainAppNav() {
+    var currentScreen by remember { mutableStateOf("login") }
+    var verificationId by remember { mutableStateOf("") }
+    var phoneNumber by remember { mutableStateOf("") }
+
+    when (currentScreen) {
+        "login" -> LoginScreen(
+            onOtpSent = { verId, phone ->
+                verificationId = verId
+                phoneNumber = phone
+                currentScreen = "otp"
+            }
+        )
+        "otp" -> OtpScreen(
+            verificationId = verificationId,
+            phoneNumber = phoneNumber,
+            onVerified = {
+                currentScreen = "home"
+            }
+        )
+        "home" -> HomeScreen()
+    }
+}
+
+@Composable
+fun LoginScreen(onOtpSent: (String, String) -> Unit) {
     var phoneNumber by remember { mutableStateOf("") }
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
+        modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = "ON-RIDE",
-            fontSize = 32.sp,
-            color = MaterialTheme.colorScheme.primary
-        )
-        
+        Text(text = "ON-RIDE", fontSize = 32.sp, color = MaterialTheme.colorScheme.primary)
         Spacer(modifier = Modifier.height(8.dp))
-        
-        Text(
-            text = "Welcome Back! Please login with your phone",
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
+        Text(text = "Enter your phone number to login", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(modifier = Modifier.height(32.dp))
 
         OutlinedTextField(
             value = phoneNumber,
             onValueChange = { phoneNumber = it },
             label = { Text("Mobile Number") },
-            placeholder = { Text("Enter 10-digit mobile number") },
+            placeholder = { Text("Enter 10-digit number") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
             modifier = Modifier.fillMaxWidth()
@@ -82,19 +94,16 @@ fun LoginScreen() {
                     val formattedPhone = "+91$phoneNumber"
                     val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
                         override fun onVerificationCompleted(credential: PhoneAuthCredential) {
-                            // தானாகவே சரிபார்க்கப்பட்டால் (Auto-verification)
+                            // Auto verification if supported
                         }
 
                         override fun onVerificationFailed(e: FirebaseException) {
-                            Toast.makeText(context, "Verification Failed: ${e.message}", Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, "Failed: ${e.message}", Toast.LENGTH_LONG).show()
                         }
 
-                        override fun onCodeSent(
-                            verificationId: String,
-                            token: PhoneAuthProvider.ForceResendingToken
-                        ) {
+                        override fun onCodeSent(verId: String, token: PhoneAuthProvider.ForceResendingToken) {
                             Toast.makeText(context, "OTP Sent Successfully!", Toast.LENGTH_SHORT).show()
-                            // இங்கு அடுத்ததாக OTP-ஐ உள்ளிடும் திரைக்குச் செல்லலாம்
+                            onOtpSent(verId, formattedPhone)
                         }
                     }
 
@@ -106,14 +115,70 @@ fun LoginScreen() {
                         .build()
                     PhoneAuthProvider.verifyPhoneNumber(options)
                 } else {
-                    Toast.makeText(context, "Please enter a valid 10-digit number", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Enter a valid 10-digit number", Toast.LENGTH_SHORT).show()
                 }
             },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
+            modifier = Modifier.fillMaxWidth().height(50.dp)
         ) {
             Text(text = "Get OTP", fontSize = 16.sp)
         }
+    }
+}
+
+@Composable
+fun OtpScreen(verificationId: String, phoneNumber: String, onVerified: () -> Unit) {
+    var otpCode by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val auth = FirebaseAuth.getInstance()
+
+    Column(
+        modifier = Modifier.fillMaxSize().padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = "Verify OTP", fontSize = 28.sp, color = MaterialTheme.colorScheme.primary)
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(text = "Code sent to $phoneNumber", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(modifier = Modifier.height(32.dp))
+
+        OutlinedTextField(
+            value = otpCode,
+            onValueChange = { otpCode = it },
+            label = { Text("Enter 6-digit OTP") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Button(
+            onClick = {
+                if (otpCode.length == 6) {
+                    val credential = PhoneAuthProvider.getCredential(verificationId, otpCode)
+                    auth.signInWithCredential(credential)
+                        .addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                Toast.makeText(context, "Login Successful!", Toast.LENGTH_SHORT).show()
+                                onVerified()
+                            } else {
+                                Toast.makeText(context, "Invalid OTP: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                } else {
+                    Toast.makeText(context, "Enter a valid 6-digit OTP", Toast.LENGTH_SHORT).show()
+                }
+            },
+            modifier = Modifier.fillMaxWidth().height(50.dp)
+        ) {
+            Text(text = "Verify & Login", fontSize = 16.sp)
+        }
+    }
+}
+
+@Composable
+fun HomeScreen() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(text = "Welcome to ON-RIDE! 🎉", fontSize = 24.sp, color = MaterialTheme.colorScheme.primary)
     }
 }
